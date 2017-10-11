@@ -91,7 +91,7 @@ void MyMesh::CompileOpenGL3X(void)
 
 	CompleteMesh();
 
-	for (uint i = 0; i < m_uVertexCount; i++)
+	for (uint i = 0; i < m_uVertexCount; ++i)
 	{
 		//Position
 		m_lVertex.push_back(m_lVertexPos[i]);
@@ -276,7 +276,43 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	// vector to hold vertices
+	std::vector<vector3 > vertices;
+
+	// object must be centered, so take half height and neg value to get points below origin line
+	vertices.push_back(vector3(0.0f, -a_fHeight / 2.0f, 0.0f));
+
+	// degree of the tris being drawn (going around in circle)
+	GLfloat theta = 0;
+
+	for (uint i = 0; i < a_nSubdivisions; ++i) {
+		theta += static_cast<GLfloat>(2 * PI / a_nSubdivisions);
+		vector3 temp = vector3(
+			static_cast<GLfloat>(cos(theta)) * a_fRadius,
+			-a_fHeight / 2.0f,
+			-static_cast<GLfloat>(sin(theta)) * a_fRadius
+		);
+		vertices.push_back(temp);
+	}
+
+	// add the tip of the cone to the vertices
+	vertices.push_back(vector3(0.0f, a_fHeight / 2.0f, 0.0f));
+
+	// configure the bottom vertices
+	for (uint i = 1; i < a_nSubdivisions; ++i) {
+		AddTri(vertices[0], vertices[i+1], vertices[i]);		
+	}
+
+	AddTri(vertices[0], vertices[1], vertices[a_nSubdivisions]);
+	
+
+	//configure the side vertices
+	for (uint i = 1; i < a_nSubdivisions; ++i) {
+		AddTri(vertices[i], vertices[i + 1], vertices[a_nSubdivisions + 1]);
+	}
+	
+	AddTri(vertices[a_nSubdivisions], vertices[1], vertices[a_nSubdivisions + 1]);
+
 	// -------------------------------
 
 	// Adding information about color
@@ -300,7 +336,54 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	
+	// vector to hold bottom vertices
+	std::vector<vector3 > verts_b;
+	verts_b.push_back(vector3(0.0f, -a_fHeight / 2.0f, 0.0f));
+	GLfloat theta = 0;
+	for (uint i = 0; i < a_nSubdivisions; ++i) {
+		theta += static_cast<GLfloat>(2 * PI / a_nSubdivisions);
+		vector3 temp = vector3(
+			static_cast<GLfloat>(cos(theta)) * a_fRadius,
+			-a_fHeight / 2.0f,
+			-static_cast<GLfloat>(sin(theta)) * a_fRadius
+		);
+		verts_b.push_back(temp);
+	}
+
+	//vector to hold top vertices
+	std::vector<vector3 > verts_t;
+	verts_t.push_back(vector3(0.0f, a_fHeight / 2.0f, 0.0f));
+	//reset angle
+	theta = 0;
+	vector3 vHeight = vector3(0.0f, a_fHeight, 0.0f);
+	for (uint i = 0; i < a_nSubdivisions; ++i) {
+		verts_t.push_back(verts_b[i + 1] + vHeight);
+	}
+
+	// config bottom
+	for (uint i = 1; i < a_nSubdivisions; ++i) {
+		AddTri(verts_b[0], verts_b[i + 1], verts_b[i]);
+		
+	}
+	AddTri(verts_b[0], verts_b[1], verts_b[a_nSubdivisions]);
+
+
+	//	config top
+	for (uint i = 1; i < a_nSubdivisions; ++i) {
+		AddTri(verts_t[0], verts_t[i], verts_t[i + 1]);
+		
+	}
+	AddTri(verts_t[0], verts_t[a_nSubdivisions], verts_t[1]);
+
+
+	//config sides
+	for (uint i = 1; i < a_nSubdivisions; ++i) {
+		AddQuad(verts_b[i], verts_b[i + 1], verts_t[i], verts_t[i + 1]);
+		
+	}
+	AddQuad(verts_b[a_nSubdivisions], verts_b[1], verts_t[a_nSubdivisions], verts_t[1]);
+
 	// -------------------------------
 
 	// Adding information about color
@@ -330,7 +413,102 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
+	// vectors to hold vertices
+	std::vector<vector3> vtxTopOuter;
+	std::vector<vector3> vtxBotOuter;
+	std::vector<vector3> vtxTopInner;
+	std::vector<vector3> vtxBotInner;
+	GLfloat theta = 0;
+
+	// top outer ring of verts
+	for (uint i = 0; i < a_nSubdivisions; ++i) {
+		theta += static_cast<GLfloat>(2 * PI / a_nSubdivisions);
+		vector3 temp = vector3(
+			static_cast<GLfloat>(cos(theta) * a_fOuterRadius), 
+			a_fHeight / 2.0f, 
+			-static_cast<GLfloat>(sin(theta) * a_fOuterRadius)
+		);
+		vtxTopOuter.push_back(temp);
+	}
+
+	// bot outer ring of verts 
+	for (uint i = 0; i < a_nSubdivisions; ++i) {
+		theta += static_cast<GLfloat>(2 * PI / a_nSubdivisions);
+		vector3 temp = vector3(
+			static_cast<GLfloat>(cos(theta) * a_fOuterRadius),
+			-a_fHeight / 2.0f,
+			-static_cast<GLfloat>(sin(theta) * a_fOuterRadius)
+		);
+		vtxBotOuter.push_back(temp);
+	}
+
+	// top inner
+	for (uint i = 0; i < a_nSubdivisions; ++i) {
+		theta += static_cast<GLfloat>(2 * PI / a_nSubdivisions);
+		vector3 temp = vector3(
+			static_cast<GLfloat>(cos(theta) * a_fInnerRadius),
+			a_fHeight / 2.0f,
+			-static_cast<GLfloat>(sin(theta) * a_fInnerRadius)
+		);
+		vtxTopInner.push_back(temp);
+	}
+
+	// bot inner
+	for (uint i = 0; i < a_nSubdivisions; ++i) {
+		theta += static_cast<GLfloat>(2 * PI / a_nSubdivisions);
+		vector3 temp = vector3(
+			static_cast<GLfloat>(cos(theta) * a_fInnerRadius),
+			-a_fHeight / 2.0f,
+			-static_cast<GLfloat>(sin(theta) * a_fInnerRadius)
+		);
+		vtxBotInner.push_back(temp);
+	}
+
+	// config points
+	// top outer
+	for (uint i = 0; i < a_nSubdivisions - 1; ++i) {
+		AddTri(vtxTopInner[i], vtxTopOuter[i], vtxTopOuter[i + 1]);
+	}
+	AddTri(vtxTopInner[a_nSubdivisions - 1], vtxTopOuter[a_nSubdivisions - 1], vtxTopOuter[0]);
+
+	// top inner
+	for (uint i = 0; i < a_nSubdivisions - 1; ++i) {
+		AddTri(vtxTopOuter[i + 1], vtxTopInner[i + 1], vtxTopInner[i]);
+	}
+	AddTri(vtxTopOuter[0], vtxTopInner[0], vtxTopInner[a_nSubdivisions - 1]);
+
+	// bot outer
+	for (uint i = 0; i < a_nSubdivisions - 1; ++i) {
+		AddTri(vtxBotOuter[i + 1], vtxBotOuter[i], vtxBotInner[i]);
+	}
+	AddTri(vtxBotOuter[0], vtxBotOuter[a_nSubdivisions - 1], vtxBotInner[a_nSubdivisions - 1]);
+
+	// bot inner
+	for (uint i = 0; i < a_nSubdivisions - 1; ++i) {
+		AddTri(vtxBotInner[i], vtxBotInner[i + 1], vtxBotOuter[i + 1]);
+	}
+	AddTri(vtxBotInner[a_nSubdivisions - 1], vtxBotInner[0], vtxBotOuter[0]);
+
+	// vertical inner
+	for (uint i = 0; i < a_nSubdivisions - 1; ++i) {
+		AddTri(vtxTopInner[i], vtxBotInner[i + 1], vtxBotInner[i]);
+	}
+	AddTri(vtxTopInner[a_nSubdivisions - 1], vtxBotInner[0], vtxBotInner[a_nSubdivisions - 1]);
+
+	for (uint i = 0; i < a_nSubdivisions - 1; ++i) {
+		AddTri(vtxTopInner[i + 1], vtxBotInner[i + 1], vtxTopInner[i]);
+	}
+	AddTri(vtxTopInner[0], vtxBotInner[0], vtxTopInner[a_nSubdivisions - 1]);
+	//vertical outer
+	for (uint i = 0; i < a_nSubdivisions - 1; ++i) {
+		AddTri(vtxBotOuter[i], vtxBotOuter[i + 1], vtxTopOuter[i]);
+	}
+	AddTri(vtxBotOuter[a_nSubdivisions - 1], vtxBotOuter[0], vtxTopOuter[a_nSubdivisions - 1]);
+
+	for (uint i = 0; i < a_nSubdivisions - 1; ++i) {
+		AddTri(vtxTopOuter[i + 1], vtxTopOuter[i], vtxBotOuter[i + 1]);
+	}
+	AddTri(vtxTopOuter[0], vtxTopOuter[a_nSubdivisions - 1], vtxBotOuter[0]);
 	// -------------------------------
 
 	// Adding information about color
