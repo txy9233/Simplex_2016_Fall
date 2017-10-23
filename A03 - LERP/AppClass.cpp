@@ -2,7 +2,7 @@
 void Application::InitVariables(void)
 {
 	////Change this to your name and email
-	//m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
+	m_sProgrammer = "Tim Yuan - txy9233@rit.edu";
 
 	////Alberto needed this at this position for software recording.
 	//m_pWindow->setPosition(sf::Vector2i(710, 0));
@@ -39,9 +39,45 @@ void Application::InitVariables(void)
 	{
 		vector3 v3Color = WaveLengthToRGB(uColor); //calculate color based on wavelength
 		m_shapeList.push_back(m_pMeshMngr->GenerateTorus(fSize, fSize - 0.1f, 3, i, v3Color)); //generate a custom torus and add it to the meshmanager
+		
+		// calculate the positions for each orbit
+		// the theory: 
+		// 1. each orbit has a common start position - vec3(.95 + (.5f * i), 0, 0) where i is the orbit # (1 = 3 sided, 2 = 4 sided, etc.)
+		// 2. the x value of the vec3 = same distance for all points along that path from origin (radius) = fsize - .05
+		// 3. the angle separatig each point if they lay on a circle would be i * 360/uSides
+		// 4. therefore, any given point would be radius * cos(angle), radius * sin(angle), 0
+		// 5. so for the triangle, the points would be
+		//		.95f * cos(0), .95f * sin(0), 0 = .95f, 0, 0
+		//		.95f * cos(60), .95f * sin(60)... you get the point. literally.
+
+
+		// temporary vector that will hold positions for the stops of each circuit
+		std::vector<vector3>stops;
+		vector3 stop;
+		float radius = fSize - 0.05f;
+		float angle = 0.0f;
+		for (uint j = 0; j < i; ++j) {
+			stop = vector3(
+				//calculations for positions
+				radius * glm::cos(glm::radians(angle)),
+				radius * glm::sin(glm::radians(angle)),
+				0);
+			stops.push_back(stop);
+			angle += (360 / i);
+		}
+
+		// add that list of stops to the master list
+		m_stopsList.push_back(stops);
+		stopsCounter.push_back(0);
+		orbitStops.push_back(i);
 		fSize += 0.5f; //increment the size for the next orbit
 		uColor -= static_cast<uint>(decrements); //decrease the wavelength
+
+	
 	}
+
+	
+
 }
 void Application::Update(void)
 {
@@ -65,8 +101,11 @@ void Application::Display(void)
 	/*
 		The following offset will orient the orbits as in the demo, start without it to make your life easier.
 	*/
-	//m4Offset = glm::rotate(IDENTITY_M4, 90.0f, AXIS_Z);
-
+	m4Offset = glm::rotate(IDENTITY_M4, 90.0f, AXIS_Z);
+	static float fTime = 0.0f;
+	static uint uClock = m_pSystem->GenClock();
+	float fDelta = m_pSystem->GetDeltaTime(uClock);
+	fTime += fDelta;
 	// draw a shapes
 	for (uint i = 0; i < m_uOrbits; ++i)
 	{
@@ -74,11 +113,38 @@ void Application::Display(void)
 
 		//calculate the current position
 		vector3 v3CurrentPos = ZERO_V3;
+		
+		// my code here
+		if (stopsCounter[i] < m_stopsList[i].size() - 1)
+			v3CurrentPos = glm::lerp(m_stopsList[i][stopsCounter[i]], m_stopsList[i][stopsCounter[i] + 1], fTime);
+		else
+			v3CurrentPos = glm::lerp(m_stopsList[i][m_stopsList[i].size() - 1], m_stopsList[i][0], fTime);
+		
 		matrix4 m4Model = glm::translate(m4Offset, v3CurrentPos);
-
+		
 		//draw spheres
-		m_pMeshMngr->AddSphereToRenderList(m4Model * glm::scale(vector3(0.1)), C_WHITE);
+		m_pMeshMngr->AddSphereToRenderList(m4Model * glm::scale(vector3(0.1)), C_WHITE);	
+		
+	
 	}
+		
+	//increment the counter for each orbit
+
+
+	if (fTime >= 1.0f)
+	{
+		fTime = 0.0f;	
+
+		for (uint i = 0; i < m_uOrbits; ++i)
+		{
+			++stopsCounter[i];
+			// this should make it so that it loops back around to 0 each time?
+			stopsCounter[i] %= orbitStops[i];
+		}
+	}
+	
+
+	
 
 	//render list call
 	m_uRenderCallCount = m_pMeshMngr->Render();
