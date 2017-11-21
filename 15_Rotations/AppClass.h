@@ -14,6 +14,9 @@ Date: 2017/05
 
 class Application
 {
+	matrix4 m_m4Orientation;
+	quaternion m_qOrientation;
+	vector3 m_v3Orientation;
 	String m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
 	MyMesh* m_pMesh = nullptr;
 

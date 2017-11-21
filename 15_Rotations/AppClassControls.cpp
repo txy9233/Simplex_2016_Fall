@@ -414,6 +414,59 @@ void Application::ProcessKeyboard(void)
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
 		m_pCameraMngr->MoveVertical(fSpeed);
 #pragma endregion
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::R))
+	{
+		m_v3Orientation = vector3(0.0f, 0.0f, 0.0f);
+		m_qOrientation = quaternion();
+	}
+		
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
+	{
+		if (fMultiplier > 0)
+		{
+			m_v3Orientation.x -= 1.0f;
+			m_qOrientation = m_qOrientation * glm::angleAxis(-1.0f, AXIS_X);
+			m_m4Orientation = glm::rotate(m_m4Orientation, -1.0f, AXIS_X);
+		}
+		else
+		{
+			m_v3Orientation.x += 1.0f;
+			m_qOrientation = m_qOrientation * glm::angleAxis(1.0f, AXIS_X);
+			m_m4Orientation = glm::rotate(m_m4Orientation, 1.0f, AXIS_X);
+		}
+	}
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y))
+	{
+		if (fMultiplier > 0)
+		{
+			m_v3Orientation.y -= 1.0f;
+			m_qOrientation = m_qOrientation * glm::angleAxis(-1.0f, AXIS_Y);
+			m_m4Orientation = glm::rotate(m_m4Orientation, -1.0f, AXIS_Y);
+		}
+		else
+		{
+			m_v3Orientation.y += 1.0f;
+			m_qOrientation = m_qOrientation * glm::angleAxis(1.0f, AXIS_Y);
+			m_m4Orientation = glm::rotate(m_m4Orientation, 1.0f, AXIS_Y);
+		}
+	}
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
+	{
+		if (fMultiplier > 0)
+		{
+			m_v3Orientation.z -= 1.0f;
+			m_qOrientation = m_qOrientation * glm::angleAxis(-1.0f, AXIS_Z);
+			m_m4Orientation = glm::rotate(m_m4Orientation, 1.0f, AXIS_Z);
+		}
+		else
+		{
+			m_v3Orientation.z += 1.0f;
+			m_qOrientation = m_qOrientation * glm::angleAxis(1.0f, AXIS_Z);
+			m_m4Orientation = glm::rotate(m_m4Orientation, -1.0f, AXIS_Z);
+		}
+	}
 }
 //Joystick
 void Application::ProcessJoystick(void)
